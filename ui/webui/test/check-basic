@@ -20,6 +20,7 @@ import anacondalib
 from installer import Installer
 from language import Language
 from review import Review
+from utils import add_public_key
 from testlib import nondestructive, test_main  # pylint: disable=import-error
 
 
@@ -115,10 +116,12 @@ class TestQuit(anacondalib.VirtInstallMachineCase):
         m = self.machine
         i = Installer(b, m)
 
+        self.allow_restart_journal_messages()
+
         i.open()
         i.quit()
-        m.wait_poweroff()
-
+        # After reboot and failed installation we get "Not a bootable disk" in the VM console
+        # and we can't SSH
 
     # TODO: Try converting this to a non-destructive test
     def testErrorHandling(self):
@@ -139,10 +142,6 @@ class TestQuit(anacondalib.VirtInstallMachineCase):
         # Errors should persist across page reloads (same as having the error prior the first page load)
         b.reload()
         b.wait_visible("#critical-error-modal")
-
-        # Exit installer
-        b.click("#critical-error-modal .pf-c-button.pf-m-secondary")
-        m.wait_poweroff()
 
 if __name__ == '__main__':
     test_main()
