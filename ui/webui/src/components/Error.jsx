@@ -21,6 +21,8 @@ import React, { useEffect, useState } from "react";
 import {
     ActionList,
     Button,
+    CodeBlock,
+    CodeBlockCode,
     Form,
     FormGroup,
     FormHelperText,
@@ -93,7 +95,7 @@ export const BZReportModal = ({
     detailsLabel,
     detailsContent,
     buttons,
-    isConnected
+    isConnected,
 }) => {
     const [logContent, setLogContent] = useState();
     const [preparingReport, setPreparingReport] = useState(false);
@@ -175,7 +177,7 @@ export const BZReportModal = ({
     );
 };
 
-const addExceptionDataToReportURL = (url, exception) => {
+const addStackTraceDataToReportURL = (url, exception) => {
     const newUrl = new URL(url);
     const context = exception.contextData?.context ? exception.contextData?.context + " " : "";
     newUrl.searchParams.append(
@@ -192,11 +194,19 @@ const addExceptionDataToReportURL = (url, exception) => {
 const exceptionInfo = (exception, idPrefix) => {
     const exceptionNamePrefix = exception.name ? exception.name + ": " : "";
     return (
-        <TextContent id={idPrefix + "-bz-report-modal-details"}>
-            <Text component={TextVariants.p}>
-                {exceptionNamePrefix + exception.message}
-            </Text>
-        </TextContent>
+        <Stack hasGutter>
+            <TextContent id={idPrefix + "-bz-report-modal-details"}>
+                <Text component={TextVariants.p}>
+                    {exceptionNamePrefix + exception.message}
+                </Text>
+            </TextContent>
+            {exception.stack &&
+            <CodeBlock>
+                <CodeBlockCode>
+                    {exception.stack}
+                </CodeBlockCode>
+            </CodeBlock>}
+        </Stack>
     );
 };
 
@@ -218,7 +228,7 @@ export const CriticalError = ({ exception, isBootIso, isConnected, reportLinkURL
     return (
         <BZReportModal
           description={description}
-          reportLinkURL={addExceptionDataToReportURL(reportLinkURL, exception)}
+          reportLinkURL={addStackTraceDataToReportURL(reportLinkURL, exception)}
           idPrefix={idPrefix}
           title={_("Critical error")}
           titleIconVariant="danger"

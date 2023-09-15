@@ -55,6 +55,7 @@ export const Application = () => {
     const [osRelease, setOsRelease] = useState("");
     const [state, dispatch] = useReducerWithThunk(reducer, initialState);
     const [storeInitilized, setStoreInitialized] = useState(false);
+    const [oops, setOops] = useState();
 
     const onCritFail = (contextData) => {
         return errorHandlerWithContext(contextData, setCriticalError);
@@ -63,6 +64,13 @@ export const Application = () => {
     useEffect(() => {
         // Before unload ask the user for verification
         window.onbeforeunload = e => "";
+
+        // Listen on JS errors
+        window.onerror = (err, url, line, col, errObj) => {
+            setOops(errObj);
+            console.error(err, url, line, col, errObj);
+        };
+
         cockpit.file("/run/anaconda/bus.address").watch(address => {
             setCriticalError();
             const clients = [
@@ -131,8 +139,8 @@ export const Application = () => {
 
     const page = (
         <>
-            {criticalError &&
-            <CriticalError exception={criticalError} isBootIso={isBootIso} isConnected={state.network.connected} reportLinkURL={bzReportURL} />}
+            {(criticalError || oops) &&
+            <CriticalError exception={{ ...criticalError, message: oops?.message || criticalError?.message, stack: oops?.stack }} isBootIso={isBootIso} isConnected={state.network.connected} reportLinkURL={bzReportURL} />}
             <Page
               data-debug={conf.Anaconda.debug}
             >
