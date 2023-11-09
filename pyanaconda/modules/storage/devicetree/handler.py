@@ -119,6 +119,7 @@ class DeviceTreeHandler(ABC):
         :param device_name: a name of the device
         :param passphrase: a passphrase
         """
+        log.debug("Setting device %s passphrase", device_name)
         device = self._get_device(device_name)
         device.format.passphrase = passphrase
         self.storage.save_passphrase(device)
