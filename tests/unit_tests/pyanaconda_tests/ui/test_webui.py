@@ -74,6 +74,7 @@ class SimpleWebUITestCase(unittest.TestCase):
 
         mocked_print_message.reset_mock()
         self.intf.showDetailedError("My detailed error", "Such a detail!")
+        # pylint: disable=implicit-str-concat
         mocked_print_message.assert_called_once_with("My detailed error\n\nSuch a detail!""")
 
     @patch("pyanaconda.ui.webui.flags")
