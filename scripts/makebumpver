@@ -152,6 +152,7 @@ class MakeBumpVer:
         cwd = os.getcwd()
         self.configure = os.path.realpath(cwd + '/configure.ac')
         self.spec = os.path.realpath(cwd + '/anaconda.spec.in')
+        self.last_changelog_entry = os.path.realpath(cwd + '/.changelog_entry')
 
         with open(self.configure, "rt") as f:
             config_ac = f.read()
@@ -402,6 +403,7 @@ class MakeBumpVer:
         bottom = l[i + 1:]
 
         f = open(self.spec, 'w')
+        fc = open(self.last_changelog_entry, 'w')
         f.writelines(top)
 
         f.write("%changelog\n")
@@ -410,22 +412,24 @@ class MakeBumpVer:
         f.write("* %s %s <%s> - %s-%s\n" % (stamp, self.gituser, self.gitemail,
                                             newVersion, self.new_release))
 
-        for msg, bugs in rpmlog:
-            msg = re.sub('(?<!%)%%(?!%)|(?<!%%)%(?!%%)', '%%', msg)
-            sublines = textwrap.wrap(msg, 77)
-            f.write("- %s\n" % sublines[0])
+        for file in [f, fc]:
+            for msg, bugs in rpmlog:
+                msg = re.sub('(?<!%)%%(?!%)|(?<!%%)%(?!%%)', '%%', msg)
+                sublines = textwrap.wrap(msg, 77)
+                file.write("- %s\n" % sublines[0])
 
-            if len(sublines) > 1:
-                for subline in sublines[1:]:
-                    f.write("  %s\n" % subline)
+                if len(sublines) > 1:
+                    for subline in sublines[1:]:
+                        file.write("  %s\n" % subline)
 
-            if bugs:
-                for entry in bugs:
-                    f.write("  %s\n" % entry)
+                if bugs:
+                    for entry in bugs:
+                        file.write("  %s\n" % entry)
 
         f.write("\n")
         f.writelines(bottom)
         f.close()
+        fc.close()
 
     def _do_release_commit(self, new_version):
         log.info("creating a tagged release commit")

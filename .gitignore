@@ -35,6 +35,7 @@ depcomp
 dirbrowser
 install-sh
 keymaps-override-*
+.last_changelog_entry
 libtool
 liveinst.h
 ltmain.sh
