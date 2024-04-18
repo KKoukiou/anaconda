@@ -198,10 +198,3 @@ jobs:
 
       - name: Run RPM tests in container
         run: make -f Makefile.am container-rpm-test
-
-      - name: Upload test logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'logs-rpm-test (${{ matrix.ci_tag }})'
-          path: test-logs/*
