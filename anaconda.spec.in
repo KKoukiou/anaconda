@@ -124,7 +124,7 @@ Requires: NetworkManager-libnm >= %{nmver}
 Requires: kbd
 Requires: chrony
 Requires: systemd
-%if 0%{?rhel} > 10 || 0%{?fedora}
+%if ! 0%{?rhel}
 Requires: systemd-resolved
 %endif
 Requires: python3-pid
@@ -169,6 +169,9 @@ BuildArchitectures: noarch
 BuildRequires: desktop-file-utils
 # live installation currently implies a graphical installation
 Requires: anaconda-gui = %{version}-%{release}
+%if 0%{?rhel} < 10 || 0%{?fedora} < 41
+Requires: usermode
+%endif
 Requires: zenity
 Requires: xisxwayland
 Recommends: xhost
@@ -267,8 +270,10 @@ Requires: ostree
 Requires: skopeo
 # External tooling for managing NVMe-FC devices in the installation environment
 Requires: nvme-cli
+%if 0%{?fedora} || 0%{?rhel} > 10
 # Needed for bootc
 Requires: podman
+%endif
 
 %description install-img-deps
 The anaconda-install-img-deps metapackage lists all boot.iso installation
@@ -336,7 +341,9 @@ Requires: dracut-network
 Requires: dracut-live
 Requires: xz
 Requires: python3-kickstart
+%if 0%{?fedora} || 0%{?rhel} > 10
 Requires: iputils
+%endif
 
 %description dracut
 The 'anaconda' dracut module handles installer-specific boot tasks and
