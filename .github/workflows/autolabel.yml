@@ -1,7 +1,8 @@
 name: Add PR labels automatically
 on:
-  pull_request_target:
+  pull_request:
     types: [opened]
+    branches: [ master, rhel-*, fedora-* ]
 
 # Without the check permission we are getting error - see more info Here
 # https://github.com/actions/labeler/issues/12
