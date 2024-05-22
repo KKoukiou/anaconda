@@ -1,6 +1,6 @@
 name: Add PR labels automatically
 on:
-  pull_request_target:
+  pull_request:
     types: [opened]
 
 # Without the check permission we are getting error - see more info Here

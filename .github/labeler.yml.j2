@@ -1,17 +1,19 @@
 # File to automatically label pull requests
 # See https://github.com/actions/labeler
 
-# Always apply target fedora version to any changes
-{% if distro_name == "fedora" and distro_release == "rawhide" %}
-f{$ rawhide_fedora_version $}:
-{% elif distro_name == "fedora" %}
-f{$ distro_release $}:
-{% elif distro_name == "rhel" %}
-rhel-{$ distro_release $}:
-{% endif %}
+rawhide:
 - any:
   - changed-files:
     - any-glob-to-any-file: ['**']
+- target_branch: master
+{% for branch in supported_branches %}
+
+{$ branch|first $}:
+- any:
+  - changed-files:
+    - any-glob-to-any-file: ['**']
+- target_branch: '{$ branch|first $}'
+{% endfor %}
 
 documentation:
 - any:
