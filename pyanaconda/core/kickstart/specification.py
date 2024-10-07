@@ -75,6 +75,7 @@ class KickstartSpecificationHandler(KickstartHandler):
     def __init__(self, specification):
         super().__init__()
         self.version = specification.version
+        self.certificates = []
 
         for name, command in specification.commands.items():
             self.registerCommand(name, command)
@@ -83,7 +84,10 @@ class KickstartSpecificationHandler(KickstartHandler):
             self.registerData(name, data)
 
         for name, data in specification.sections_data.items():
-            self.registerSectionData(name, data)
+            if name is "certificate":
+                self.certificates.append(data())
+            else:
+                self.registerSectionData(name, data)
 
         if specification.addons:
             self.addons = AddonRegistry()
