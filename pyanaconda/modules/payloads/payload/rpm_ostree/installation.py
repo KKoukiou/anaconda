@@ -26,7 +26,7 @@ from pyanaconda.core.configuration.anaconda import conf
 from pyanaconda.core.glib import GError, Variant, create_new_context, format_size_full
 from pyanaconda.core.i18n import _
 from pyanaconda.core.path import make_directories, set_system_root
-from pyanaconda.core.util import execWithRedirect
+from pyanaconda.core.util import execWithRedirect, execWithCapture
 from pyanaconda.modules.common.constants.objects import BOOTLOADER, DEVICE_TREE
 from pyanaconda.modules.common.constants.services import LOCALIZATION, STORAGE
 from pyanaconda.modules.common.errors.installation import (
@@ -46,15 +46,16 @@ log = get_module_logger(__name__)
 
 
 def safe_exec_with_redirect(cmd, argv, successful_return_codes=(0,), **kwargs):
-    """Like util.execWithRedirect, but treat errors as fatal.
+    """Like util.execWithCapture, but treat errors as fatal.
 
     :raise: PayloadInstallationError if the call fails for any reason
     """
-    rc = execWithRedirect(cmd, argv, **kwargs)
+    rc, output = execWithCapture(cmd, argv, **kwargs)
 
     if rc not in successful_return_codes:
         raise PayloadInstallationError(
-            "The command '{}' exited with the code {}.".format(" ".join([cmd] + argv), rc)
+            "The command '{}' exited with the code {}:\n{}".format(" ".join([cmd] + argv), rc,
+            output)
         )
 
 
