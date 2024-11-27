@@ -66,8 +66,21 @@ jobs:
           exit 1
 
       - name: Trigger anaconda run
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git clone --depth=1 https://github.com/cockpit-project/bots
           mkdir -p ~/.config/cockpit-dev
           echo '${{ secrets.GITHUB_TOKEN }}' > ~/.config/cockpit-dev/github-token
-          bots/tests-trigger --repo ${{ github.repository }} ${{ github.event.number }} fedora-rawhide-boot/anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui
+          cmd_output=$(bots/tests-trigger --repo ${{ github.repository }} ${{ github.event.number }} fedora-rawhide-boot/anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui 2>&1)
+          if echo "$cmd_output" | grep -q 'Override with --allow'; then
+              sha="${{ needs.pr-info.outputs.sha }}"
+              url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts"
+
+              echo -e -n "Trigger manually Web UI tests for external contributors:\n bots/tests-trigger --repo ${{ github.repository }} --allow ${{ github.event.number }} fedora-rawhide-boot/anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui" > comment.txt
+              cat comment.txt
+
+              gh pr comment \
+                ${{ github.event.issue.number }} \
+                -F comment.txt
+          fi
