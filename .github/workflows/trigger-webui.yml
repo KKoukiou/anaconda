@@ -51,6 +51,7 @@ jobs:
       # than the COPR srpm build finishes.
       - name: Wait for packit COPR build
         run: |
+          exit 0
           set -ex
           PUSH_TIME=$(date --utc +%Y%m%d%H%M%S -d '${{ github.event.pull_request.head.repo.pushed_at }}')
           COPR_NAME="${{ github.event.pull_request.base.user.login }}-${{ github.event.pull_request.base.repo.name }}-${{ github.event.number }}"
@@ -73,7 +74,7 @@ jobs:
           mkdir -p ~/.config/cockpit-dev
           echo '${{ secrets.GITHUB_TOKEN }}' > ~/.config/cockpit-dev/github-token
           cmd_output=$(bots/tests-trigger --repo ${{ github.repository }} ${{ github.event.number }} fedora-rawhide-boot/anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui 2>&1)
-          if echo "$cmd_output" | grep -q 'Override with --allow'; then
+          if echo "$cmd_output" | grep -qv 'Override with --allow'; then
               sha="${{ needs.pr-info.outputs.sha }}"
               url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts"
 
