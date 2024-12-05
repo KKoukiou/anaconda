@@ -66,9 +66,16 @@ jobs:
           done
           exit 1
 
+      - name: Clone Anaconda repository
+        uses: actions/checkout@v4
+        with:
+          # It's weirdly needed for the `gh pr comment`
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
       - name: Trigger anaconda run
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone --depth=1 https://github.com/cockpit-project/bots
           mkdir -p ~/.config/cockpit-dev
