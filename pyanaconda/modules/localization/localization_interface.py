@@ -35,6 +35,7 @@ class LocalizationInterface(KickstartModuleInterface):
 
     def connect_signals(self):
         super().connect_signals()
+        self.watch_property("CompositorLayouts", self.implementation.compositor_layouts_changed)
         self.watch_property("Language", self.implementation.language_changed)
         self.watch_property("LanguageSupport", self.implementation.language_support_changed)
         self.watch_property("LanguageKickstarted", self.implementation.language_seen_changed)
@@ -291,6 +292,26 @@ class LocalizationInterface(KickstartModuleInterface):
     def CompositorSelectedLayoutChanged(self, layout: Str):
         """Signal emitted when the selected keyboard layout changes."""
         pass
+
+    @property
+    def CompositorLayouts(self) -> List[Str]:
+        """Get all available keyboard layouts.
+
+        :return: A list of keyboard layouts (e.g. ["cz (qwerty)", cn (mon_todo_galik)])
+        :rtype: list of strings
+        """
+        return self.implementation.get_compositor_layouts()
+
+    @CompositorLayouts.setter
+    @emits_properties_changed
+    def CompositorLayouts(self, layout_variants: List[Str]):
+        """Set the available keyboard layouts.
+
+        :param layout_variants: A list of keyboard layouts (e.g. ["cz (qwerty)",
+            cn (mon_todo_galik)])
+        :type layout_variants: list of strings
+        """
+        self.implementation.set_compositor_layouts(layout_variants, [])
 
     def GetCompositorLayouts(self) -> List[Str]:
         """Get all available keyboard layouts.
