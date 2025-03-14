@@ -20,7 +20,12 @@
 import unittest
 from unittest.mock import Mock
 
-from blivet.devices import DiskDevice, StorageDevice
+from blivet.devices import (
+    DiskDevice,
+    MDRaidArrayDevice,
+    PartitionDevice,
+    StorageDevice
+)
 from blivet.formats import get_format
 from blivet.size import Size
 from dasbus.typing import Bool, Str, get_variant
@@ -197,6 +202,62 @@ class ManualPartitioningInterfaceTestCase(unittest.TestCase):
                 'reformat': get_variant(Bool, False)
             }
         ]
+
+    def test_gather_requests_mdarray(self):
+       """Test GatherRequests with a mdarray device."""
+       self.module.on_storage_changed(create_storage())
+
+       disk1 = DiskDevice(
+           "dev1",
+           fmt=get_format("mdmember")
+       )
+       disk2 = DiskDevice(
+           "dev2",
+           fmt=get_format("mdmember")
+       )
+       device = MDRaidArrayDevice(
+           "dev3",
+           level="raid1",
+           parents=[disk1, disk2]
+       )
+       boot_partition = PartitionDevice(
+           name="dev3p1",
+           parents=[device],
+           size=Size("500 MiB")
+       )
+       boot_partition.format = get_format("ext4", mountpoint="/boot")
+       root_partition = PartitionDevice(
+           name="dev3p2",
+           parents=[device],
+           size=Size("50 GiB")
+       )
+       root_partition.format = get_format("ext4", mountpoint="/")
+       self._add_device(disk1)
+       self._add_device(disk2)
+       self._add_device(device)
+       self._add_device(boot_partition)
+       self._add_device(root_partition)
+
+       assert self.interface.GatherRequests() == [
+           {
+               'device-spec': get_variant(Str, boot_partition.device_id),
+               'format-options': get_variant(Str, ''),
+               'format-type': get_variant(Str, boot_partition.format.type),
+               'mount-options': get_variant(Str, ''),
+               'ks-spec': get_variant(Str, ''),
+               'mount-point': get_variant(Str, boot_partition.format.mountpoint),
+               'reformat': get_variant(Bool, False)
+               },
+           {
+               'device-spec': get_variant(Str, root_partition.device_id),
+               'format-options': get_variant(Str, ''),
+               'format-type': get_variant(Str, root_partition.format.type),
+               'mount-options': get_variant(Str, ''),
+               'ks-spec': get_variant(Str, ''),
+               'mount-point': get_variant(Str, root_partition.format.mountpoint),
+               'reformat': get_variant(Bool, False)
+           }
+      ]
 
     def test_gather_requests_combination(self):
         """Test GatherRequests with user requests."""
