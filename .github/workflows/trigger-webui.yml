@@ -66,6 +66,8 @@ jobs:
           exit 1
 
       - name: Trigger anaconda run
+        id: trigger-anaconda-webui-automatic
+        continue-on-error: true
         run: |
           git clone --depth=1 https://github.com/cockpit-project/bots
           mkdir -p ~/.config/cockpit-dev
@@ -73,3 +75,23 @@ jobs:
           TEST_OS="fedora-rawhide-boot"
           bots/tests-trigger --force --repo ${{ github.repository }} ${{ github.event.number }} $TEST_OS/anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui
           bots/tests-trigger --force --repo ${{ github.repository }} ${{ github.event.number }} $TEST_OS/efi-anaconda-pr-${{ github.event.number }}@rhinstaller/anaconda-webui
+
+     - name: Send a PR comment that the bots/tests-trigger needs to be manually triggered
+        env:
+          GH_TOKEN: ${{ github.token }}
+        if: steps.trigger-anaconda-webui-automatic.outcome == 'failure'
+          run: |
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            REPO=${{ github.repository }}
+
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$(cat <<EOF
+Please ask a member of the Anaconda team to trigger the Web UI tests for this PR. You can do that by running:
+
+\`\`\`bash
+bots/tests-trigger --force --allow --repo $REPO $PR_NUMBER fedora-rawhide-boot/anaconda-pr-$PR_NUMBER@rhinstaller/anaconda-webui
+bots/tests-trigger --force --allow --repo $REPO $PR_NUMBER fedora-rawhide-boot/efi-anaconda-pr-$PR_NUMBER@rhinstaller/anaconda-webui
+\`\`\`
+
+in the \`cockpit-project/bots\` repository.
+EOF
+)"
