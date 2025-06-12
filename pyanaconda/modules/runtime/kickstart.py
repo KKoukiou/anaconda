@@ -1,4 +1,5 @@
 #
+# TEST
 # Kickstart handler for runtime settings.
 #
 # Copyright (C) 2023 Red Hat, Inc.
