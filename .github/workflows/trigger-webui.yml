@@ -41,21 +41,21 @@ jobs:
       # an unpredictable SHA; so instead, wait until COPR has a build which is
       # newer than the PR push time. This assumes that this workflow always runs earlier
       # than the COPR srpm build finishes.
-      - name: Wait for packit COPR build
-        run: |
-          set -ex
-          PUSH_TIME=$(date --utc +%Y%m%d%H%M%S -d '${{ github.event.pull_request.head.repo.pushed_at }}')
-          COPR_NAME="${{ github.event.pull_request.base.user.login }}-${{ github.event.pull_request.base.repo.name }}-${{ github.event.number }}"
-          for _ in $(seq 60); do
-              sleep 60;
-              if dnf copr enable -y packit/$COPR_NAME fedora-rawhide-x86_64 &&
-                 out=$(dnf info --refresh --repo='copr:*anaconda*' --releasever=rawhide anaconda) &&
-                 stamp=$(echo "$out" | awk '/^Release/ { split($3, v, "."); print substr(v[2], 0, 14)}' | head -1) &&
-                 [ "$stamp" -gt "$PUSH_TIME" ]; then
-                  exit 0
-              fi
-          done
-          exit 1
+      # - name: Wait for packit COPR build
+      #   run: |
+      #     set -ex
+      #     PUSH_TIME=$(date --utc +%Y%m%d%H%M%S -d '${{ github.event.pull_request.head.repo.pushed_at }}')
+      #     COPR_NAME="${{ github.event.pull_request.base.user.login }}-${{ github.event.pull_request.base.repo.name }}-${{ github.event.number }}"
+      #     for _ in $(seq 60); do
+      #         sleep 60;
+      #         if dnf copr enable -y packit/$COPR_NAME fedora-rawhide-x86_64 &&
+      #            out=$(dnf info --refresh --repo='copr:*anaconda*' --releasever=rawhide anaconda) &&
+      #            stamp=$(echo "$out" | awk '/^Release/ { split($3, v, "."); print substr(v[2], 0, 14)}' | head -1) &&
+      #            [ "$stamp" -gt "$PUSH_TIME" ]; then
+      #             exit 0
+      #         fi
+      #     done
+      #     exit 1
 
       - name: Trigger anaconda run
         id: trigger-anaconda-webui-automatic
@@ -68,6 +68,7 @@ jobs:
           PR_NUMBER="$PR_NUMBER"
           REPO="${{ github.repository }}"
           TEST_OS="fedora-rawhide-boot"
+          exit 1
 
           bots/tests-trigger --force --repo $REPO $PR_NUMBER $TEST_OS/anaconda-pr-$PR_NUMBER@rhinstaller/anaconda-webui
           bots/tests-trigger --force --repo $REPO $PR_NUMBER $TEST_OS/efi-anaconda-pr-$PR_NUMBER@rhinstaller/anaconda-webui
