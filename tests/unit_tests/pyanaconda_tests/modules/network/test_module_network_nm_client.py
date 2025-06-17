@@ -1103,8 +1103,8 @@ class NMClientTestCase(unittest.TestCase):
 
         mainctx.pop_thread_default()
 
-    # Don't ignore AssertionError from rised from the Thread
-    @pytest.mark.filterwarnings("error")
+    # Ensure that AssertionError raised in the thread is not silently ignored
+    @pytest.mark.filterwarnings("error::AssertionError")
     def test_sync_call_glib_in_thread(self):
         thread = threading.Thread(target = self.test_sync_call_glib)
         thread.start()
