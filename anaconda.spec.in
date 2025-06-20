@@ -143,6 +143,11 @@ Requires: python3-pid
 Requires: crypto-policies
 Requires: crypto-policies-scripts
 
+# Required for 'gen_grub_cfgstub' script
+%ifnarch s390 s390x
+Requires: grub2-common >= 2.12-36
+%endif
+
 # required because of the rescue mode and RDP question
 Requires: anaconda-tui = %{version}-%{release}
 
