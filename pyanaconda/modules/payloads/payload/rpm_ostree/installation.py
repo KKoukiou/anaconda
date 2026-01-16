@@ -354,8 +354,10 @@ class PrepareBootcMountTargetsTask(PrepareMountTargetsTaskBase):
         var_sysroot = self._sysroot + "/var"
         var_roothome = var_sysroot + "/roothome"
         var_home = var_sysroot + "/home"
-        os.makedirs(var_roothome, mode=0o755, exist_ok=True)
-        os.makedirs(var_home, mode=0o755, exist_ok=True)
+        var_lib_insights = var_sysroot + "/lib/insights"
+        make_directories(var_roothome)
+        make_directories(var_home)
+        make_directories(var_lib_insights)
 
     def run(self):
         """Run the task.
