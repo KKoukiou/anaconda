@@ -37,6 +37,7 @@ Source0: https://github.com/rhinstaller/%{name}/releases/download/%{name}-%{vers
 %define nmver 1.0
 %define pykickstartver 3.73-1
 %define pypartedver 2.5-2
+%define pythonver 3.15
 %define pythonblivetver 1:3.13.0-1
 %define rpmver 4.15.0
 %define simplelinever 1.9.0-1
@@ -57,7 +58,7 @@ BuildRequires: glade-devel
 %endif
 BuildRequires: make
 BuildRequires: pango-devel
-BuildRequires: python3-devel
+BuildRequires: python3-devel >= %{pythonver}
 BuildRequires: systemd-rpm-macros
 # rpm and libarchive are needed for driver disk handling
 BuildRequires: rpm-devel >= %{rpmver}
@@ -80,7 +81,7 @@ The anaconda package is a metapackage for the Anaconda installer.
 Summary: Core of the Anaconda installer
 # core/signal.py is under MIT
 License: GPL-2.0-or-later AND MIT
-Requires: python3-libs
+Requires: python3-libs >= %{pythonver}
 %if 0%{?rhel} > 10 || 0%{?fedora} > 40 || %{defined eln}
 Requires: python3-crypt-r
 %endif
