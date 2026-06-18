@@ -21,6 +21,7 @@ from pyanaconda.anaconda_loggers import get_module_logger
 from pyanaconda.core.configuration.anaconda import conf
 from pyanaconda.modules.common.errors.runtime import ScriptError
 from pyanaconda.modules.common.task import Task
+from pyanaconda.modules.payloads.payload.rpm_ostree.util import get_ostree_deployment_path
 
 log = get_module_logger(__name__)
 
@@ -49,7 +50,14 @@ class RunScriptsTask(Task):
         for script in self._scripts:
             if script.type == self._script_type:
                 if script.type == KS_SCRIPT_POST:
-                    result = script.run(conf.target.system_root)
+                    # For OSTree systems, use the deployment path instead of sysroot
+                    # The deployment contains the actual complete filesystem with /bin/sh
+                    chroot_path = conf.target.system_root
+                    deployment_path = get_ostree_deployment_path(chroot_path)
+                    if deployment_path:
+                        chroot_path = deployment_path
+                        log.info("Using OSTree deployment path for scripts: %s", chroot_path)
+                    result = script.run(chroot_path)
                 else:
                     result = script.run("/")
                 if result:
