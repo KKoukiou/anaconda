@@ -92,18 +92,10 @@ class LiveUtilsTestCase(unittest.TestCase):
 class InstallFromImageTaskTestCase(unittest.TestCase):
     """Test the InstallFromImageTask class."""
 
-    def _make_reader(self, rc):
-        reader = MagicMock()
-        reader.__iter__.return_value = []
-        reader.rc = rc
-        return reader
-
     @patch("pyanaconda.modules.payloads.payload.live_image.installation.os.sync")
     @patch("pyanaconda.modules.payloads.payload.live_image.installation.execWithRedirect")
-    @patch("pyanaconda.modules.payloads.payload.live_image.installation.execReadlines")
-    def test_install_image_task(self, exec_readlines, exec_with_redirect, os_sync):
+    def test_install_image_task(self, exec_with_redirect, os_sync):
         """Test installation from an image task."""
-        exec_readlines.return_value = self._make_reader(0)
         exec_with_redirect.return_value = 0
 
         with tempfile.TemporaryDirectory(dir="/var/tmp") as mount_point:
@@ -114,10 +106,9 @@ class InstallFromImageTaskTestCase(unittest.TestCase):
 
             task.run()
 
-            exec_readlines.assert_called_once_with("rsync", [
+            exec_with_redirect.assert_called_once_with("rsync", [
                 "-pogAXtlHrDx",
                 "--stats",
-                "--info=flist2,name,progress2",
                 "--no-inc-recursive",
                 "--exclude", "/dev/",
                 "--exclude", "/proc/",
@@ -136,16 +127,46 @@ class InstallFromImageTaskTestCase(unittest.TestCase):
                 "/mnt/root"
             ])
 
-            exec_with_redirect.assert_not_called()
+    @patch("pyanaconda.modules.payloads.payload.live_image.installation.os.sync")
+    @patch("pyanaconda.modules.payloads.payload.live_image.installation.execWithRedirect")
+    def test_install_image_task_with_efi(self, exec_with_redirect, os_sync):
+        """Test installation from an image task with /boot/efi."""
+        exec_with_redirect.return_value = 0
 
-            # Create /boot/efi directory in mount point.
+        with tempfile.TemporaryDirectory(dir="/var/tmp") as mount_point:
             os.makedirs(join_paths(mount_point, "boot/efi"))
+
+            task = InstallFromImageTask(
+                sysroot="/mnt/root",
+                mount_point=mount_point
+            )
+
             task.run()
 
-            exec_with_redirect.assert_called_once_with("rsync", [
+            assert exec_with_redirect.call_count == 2
+            exec_with_redirect.assert_any_call("rsync", [
+                "-pogAXtlHrDx",
+                "--stats",
+                "--no-inc-recursive",
+                "--exclude", "/dev/",
+                "--exclude", "/proc/",
+                "--exclude", "/tmp/*",
+                "--exclude", "/sys/",
+                "--exclude", "/run/",
+                "--exclude", "/boot/*rescue*",
+                "--exclude", "/boot/loader/",
+                "--exclude", "/boot/efi/",
+                "--exclude", "/boot/grub2/",
+                "--exclude", "/etc/sysconfig/",
+                "--exclude", "/usr/lib/grub/",
+                "--exclude", "/etc/machine-id",
+                "--exclude", "/etc/machine-info",
+                mount_point + "/",
+                "/mnt/root"
+            ])
+            exec_with_redirect.assert_any_call("rsync", [
                 "-rx",
                 "--stats",
-                "--info=flist2,name,progress2",
                 "--no-inc-recursive",
                 "--exclude", "/boot/efi/loader/",
                 mount_point + "/boot/efi/",
@@ -153,10 +174,44 @@ class InstallFromImageTaskTestCase(unittest.TestCase):
             ])
 
     @patch("pyanaconda.modules.payloads.payload.live_image.installation.os.sync")
-    @patch("pyanaconda.modules.payloads.payload.live_image.installation.execReadlines")
-    def test_install_image_task_failed_exception(self, exec_readlines, os_sync):
+    @patch("pyanaconda.modules.payloads.payload.live_image.installation.execWithRedirect")
+    def test_install_image_task_kiwi_fixup(self, exec_with_redirect, os_sync):
+        """Test installation from an image task with KIWI fixup paths."""
+        exec_with_redirect.return_value = 0
+
+        with tempfile.TemporaryDirectory(dir="/var/tmp") as mount_point, \
+             tempfile.TemporaryDirectory(dir="/var/tmp") as sysroot:
+            os.makedirs(join_paths(mount_point, "boot/grub2"))
+            os.makedirs(join_paths(mount_point, "etc/sysconfig"))
+
+            task = InstallFromImageTask(
+                sysroot=sysroot,
+                mount_point=mount_point
+            )
+
+            task.run()
+
+            assert exec_with_redirect.call_count == 3
+            exec_with_redirect.assert_any_call("rsync", [
+                "-rx",
+                "--stats",
+                "--no-inc-recursive",
+                join_paths(mount_point, "boot/grub2") + "/",
+                join_paths(sysroot, "boot/grub2"),
+            ])
+            exec_with_redirect.assert_any_call("rsync", [
+                "-rx",
+                "--stats",
+                "--no-inc-recursive",
+                join_paths(mount_point, "etc/sysconfig") + "/",
+                join_paths(sysroot, "etc/sysconfig"),
+            ])
+
+    @patch("pyanaconda.modules.payloads.payload.live_image.installation.os.sync")
+    @patch("pyanaconda.modules.payloads.payload.live_image.installation.execWithRedirect")
+    def test_install_image_task_failed_exception(self, exec_with_redirect, os_sync):
         """Test installation from an image task with exception."""
-        exec_readlines.side_effect = OSError("Fake!")
+        exec_with_redirect.side_effect = OSError("Fake!")
 
         with tempfile.TemporaryDirectory() as mount_point:
             task = InstallFromImageTask(
@@ -167,7 +222,7 @@ class InstallFromImageTaskTestCase(unittest.TestCase):
             with pytest.raises(PayloadInstallationError) as cm:
                 task.run()
 
-        msg = "Failed to install image: Fake!"
+        msg = "Failed to install {} from image: Fake!".format(mount_point + "/")
         assert str(cm.value) == msg
 
 
