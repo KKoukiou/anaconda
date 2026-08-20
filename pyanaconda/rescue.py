@@ -206,14 +206,6 @@ class Rescue(object):
             task_proxy = STORAGE.get_proxy(task_path)
             sync_run_task(task_proxy)
             log.info("System has been mounted under: %s", conf.target.system_root)
-
-            # Mount /boot if it exists
-            # This is needed for OSTree deployments to be detected properly
-            boot_device = root.get_boot_device()
-            if boot_device:
-                boot_path = os.path.join(conf.target.system_root, "boot")
-                read_only = "ro" if self.ro else ""
-                self._device_tree_proxy.MountDevice(boot_device, boot_path, read_only)
         except MountFilesystemError as e:
             log.error("Mounting system under %s failed: %s", conf.target.system_root, e)
             self.status = RescueModeStatus.MOUNT_FAILED
@@ -254,7 +246,7 @@ class Rescue(object):
         makeFStab()
 
         # Check if this is an OSTree/immutable system
-        if get_ostree_deployment_path(conf.target.system_root):
+        if get_ostree_deployment_path(conf.target.physical_root):
             self.is_ostree = True
 
         # run %post if we've mounted everything
@@ -467,10 +459,7 @@ class RescueStatusAndShellSpoke(NormalTUISpoke):
                                      "command line for autorelabel to work properly.\n")
                                    if self._rescue.autorelabel else "")
 
-                # For OSTree installations, find the deployment directory for chroot
                 mountpoint = conf.target.system_root
-                deployment_path = get_ostree_deployment_path(mountpoint)
-                chroot_path = deployment_path if deployment_path else mountpoint
 
                 ostree_warning = (_("Warning: An immutable system has been detected. "
                                     "It is not recommended to make manual changes to the deployment "
@@ -481,8 +470,8 @@ class RescueStatusAndShellSpoke(NormalTUISpoke):
                 text = TextWidget(_("Your system has been mounted under %(mountpoint)s.\n\n"
                                     "If you would like to make the root of your system the "
                                     "root of the active system, run the command:\n\n"
-                                    "\tchroot %(chroot_path)s\n\n")
-                                  % {"mountpoint": mountpoint, "chroot_path": chroot_path}
+                                    "\tchroot %(mountpoint)s\n\n")
+                                  % {"mountpoint": mountpoint}
                                   + ostree_warning + autorelabel_msg + finish_msg)
             elif status == RescueModeStatus.MOUNT_FAILED:
                 if self._rescue.reboot:
