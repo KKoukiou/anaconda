@@ -52,6 +52,7 @@ from pyanaconda.core.path import (
 from pyanaconda.core.service import is_service_installed
 from pyanaconda.core.signal import Signal
 from pyanaconda.core.util import execWithRedirect, restorecon
+from pyanaconda.errors import HandledInstallationError
 from pyanaconda.installation_tasks import DBusTask, Task, TaskQueue
 from pyanaconda.kexec import setup_kexec
 from pyanaconda.modules.boss.install_manager.installation_category_interface import (
@@ -463,10 +464,20 @@ class RunInstallationTask(InstallationTask):
         """Run the installation and report its outcome.
 
         This runs in the task's worker thread, so the (possibly slow) IPMI
-        report and kickstart error scripts never block the D-Bus loop. A
-        failure is reported from _thread_failed_callback instead.
+        report and kickstart error scripts never block the D-Bus loop.
+
+        Handled errors (e.g. ScriptError) raise HandledInstallationError
+        after going through errorHandler - the task stops cleanly and
+        Finish() has nothing to re-raise. Unhandled exceptions bypass
+        this method entirely and are handled by _thread_failed_callback.
         """
-        self._run_installation()
+        try:
+            self._run_installation()
+        except HandledInstallationError:
+            self._report_outcome(
+                InstallationStatus.FAILED, self._failure_reason
+            )
+            return
         self._report_outcome(
             InstallationStatus.SUCCEEDED, InstallationFailureReason.NONE
         )

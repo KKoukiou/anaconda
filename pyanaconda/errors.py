@@ -40,6 +40,11 @@ class ScriptError(Exception):
         self.details = details
 
 
+class HandledInstallationError(Exception):
+    """The installation was stopped after a handled fatal error."""
+    pass
+
+
 class NonInteractiveError(Exception):
     pass
 
