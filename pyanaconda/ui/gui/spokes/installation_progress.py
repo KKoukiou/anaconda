@@ -14,6 +14,7 @@
 # source code or documentation are not subject to the GNU General Public
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
+from gi.repository import Gtk
 from pykickstart.constants import KS_REBOOT, KS_SHUTDOWN
 
 from pyanaconda.anaconda_loggers import get_module_logger
@@ -56,6 +57,7 @@ class ProgressSpoke(StandaloneSpoke, InstallationProgressErrorMixin):
         self._progressNotebook = self.builder.get_object("progressNotebook")
         self._spinner = self.builder.get_object("progressSpinner")
         self._task_proxy = None
+        self._installation_failed = False
 
     @property
     def completed(self):
@@ -69,6 +71,9 @@ class ProgressSpoke(StandaloneSpoke, InstallationProgressErrorMixin):
             reboot_data.action = KS_REBOOT
             runtime_proxy.Reboot = RebootData.to_structure(reboot_data)
 
+    def _on_installation_failed(self):
+        self._installation_failed = True
+
     def _on_installation_done(self):
         log.debug("The installation has finished.")
 
@@ -76,8 +81,13 @@ class ProgressSpoke(StandaloneSpoke, InstallationProgressErrorMixin):
         gtk_call_once(self._spinner.stop)
         gtk_call_once(self._spinner.hide)
 
-        # Finish the installation task. Re-raise tracebacks if any.
+        # Re-raise unhandled exceptions for python-meh diagnostics.
+        # Handled errors are swallowed by the finish() override.
         self._task_proxy.Finish()
+
+        if self._installation_failed:
+            gtk_call_once(Gtk.main_quit)
+            return
 
         if conf.license.eula:
             self.set_warning(_("Use of this product is subject to the license agreement "
@@ -157,6 +167,7 @@ class ProgressSpoke(StandaloneSpoke, InstallationProgressErrorMixin):
 
         self._task_proxy.ProgressChanged.connect(self._on_progress_changed)
         self._task_proxy.ErrorRaised.connect(self._on_error_raised)
+        self._task_proxy.Failed.connect(self._on_installation_failed)
         self._task_proxy.Stopped.connect(self._on_installation_done)
 
         self._task_proxy.Start()
