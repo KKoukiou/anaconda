@@ -31,14 +31,13 @@ from simpleline.render.screen_handler import ScreenHandler
 
 from pyanaconda import ui
 from pyanaconda.anaconda_loggers import get_module_logger
-from pyanaconda.core.constants import IPMI_ABORTED, QUIT_MESSAGE
+from pyanaconda.core.constants import QUIT_MESSAGE
 from pyanaconda.core.threads import thread_manager
-from pyanaconda.core.util import ipmi_report
 from pyanaconda.flags import flags
 from pyanaconda.ui.tui.hubs.summary import SummaryHub
 from pyanaconda.ui.tui.signals import SendMessageSignal
 from pyanaconda.ui.tui.spokes import StandaloneSpoke
-from pyanaconda.ui.tui.tuiobject import IpmiErrorDialog
+from pyanaconda.ui.tui.tuiobject import InstallationErrorDialog
 
 log = get_module_logger(__name__)
 
@@ -70,10 +69,6 @@ def exception_msg_handler(signal, data):
         # start new loop for handling the exception
         # this will stop processing all the old signals and prevent raising new exceptions
         loop.execute_new_loop(signal)
-
-
-def tui_quit_callback(data):
-    ipmi_report(IPMI_ABORTED)
 
 
 class TextUserInterface(ui.UserInterface):
@@ -168,7 +163,6 @@ class TextUserInterface(ui.UserInterface):
         loop = GLibEventLoop()
         App.initialize(event_loop=loop)
 
-        loop.set_quit_callback(tui_quit_callback)
         scheduler = App.get_scheduler()
         scheduler.quit_screen = YesNoDialog(self.quitMessage)
 
@@ -300,7 +294,7 @@ class TextUserInterface(ui.UserInterface):
             # If we're in cmdline mode, just exit.
             return
 
-        error_window = IpmiErrorDialog(message)
+        error_window = InstallationErrorDialog(message)
         ScreenHandler.push_screen_modal(error_window)
 
     def showDetailedError(self, message, details, buttons=None):
